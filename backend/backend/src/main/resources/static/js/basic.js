@@ -28,7 +28,7 @@ $(document).ready(function () {
             $('#username').text(username);
             if (isAdmin) {
                 $('#admin').text(true);
-                showProduct(true);
+                showProduct();
             } else {
                 showProduct();
             }
@@ -154,7 +154,7 @@ function addProduct(itemDto) {
         }
     });
 }
-function showProduct(isAdmin = false) {
+function showProduct() {
     /**
      * 관심상품 목록: #product-container
      * 검색결과 목록: #search-result-box
@@ -162,32 +162,43 @@ function showProduct(isAdmin = false) {
      */
 
     let dataSource = null;
-    // admin 계정
-    if (isAdmin) {
-        dataSource = `/api/admin/products`;
-    } else {
-        dataSource = `/api/products`;
-    }
 
-    $.ajax({
-        type: 'GET',
-        url: dataSource,
-        contentType: 'application/json',
-        success: function (response) {
+    var sorting = $("#sorting option:selected").val();
+    var isAsc = $(':radio[name="isAsc"]:checked').val();
+
+    dataSource = `/api/products?sortBy=${sorting}&isAsc=${isAsc}`;
+    $('#product-container').empty();
+    $('#search-result-box').empty();
+    $('#pagination').pagination({
+        dataSource,
+        locator: 'content',
+        alias: {
+            pageNumber: 'page',
+            pageSize: 'size'
+        },
+        totalNumberLocator: (response) => {
+            return response.totalElements;
+        },
+        pageSize: 10,
+        showPrevious: true,
+        showNext: true,
+        ajax: {
+            error(error, status, request) {
+                if (error.status === 403) {
+                    $('html').html(error.responseText);
+                    return;
+                }
+                logout();
+            }
+        },
+        callback: function(response, pagination) {
+
             $('#product-container').empty();
             for (let i = 0; i < response.length; i++) {
                 let product = response[i];
                 let tempHtml = addProductItem(product);
                 $('#product-container').append(tempHtml);
             }
-        },
-        error(error, status, request) {
-
-            if (error.status === 403) {
-                $('html').html(error.responseText);
-                return;
-            }
-            logout();
         }
     });
 
@@ -228,8 +239,10 @@ function setMyprice() {
      * 5, 성공적으로 등록되었음을 알리는 alert를 띄운다.
      * 6. 창을 새로고침한다. window.location.reload();
      */
-        // 1. id가 myprice 인 input 태그에서 값을 가져온다.
+
+    // 1. id가 myprice 인 input 태그에서 값을 가져온다.
     let myprice = $('#myprice').val();
+
     // 2. 만약 값을 입력하지 않았으면 alert를 띄우고 중단한다.
     if (myprice == '') {
         alert('올바른 가격을 입력해주세요');
@@ -262,8 +275,11 @@ function logout() {
     Cookies.remove('Authorization', {path: '/'});
     window.location.href = host + '/api/user/login-page';
 }
+
 function getToken() {
+
     let auth = Cookies.get('Authorization');
+
     if (auth === undefined) {
         return '';
     }

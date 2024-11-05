@@ -5,14 +5,16 @@ import com.shop.backend.dto.ProductRequestDto;
 import com.shop.backend.dto.ProductResponseDto;
 import com.shop.backend.entity.Product;
 import com.shop.backend.entity.User;
+import com.shop.backend.entity.UserRoleEnum;
 import com.shop.backend.naver.dto.ItemDto;
 import com.shop.backend.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -44,30 +46,28 @@ public class ProductService {
         return new ProductResponseDto(product);
     }
 
-    public List<ProductResponseDto> getProduct(User user) {
 
-        List<Product> productList = productRepository.findAllByUser(user);
-        List<ProductResponseDto> responseDtos = new ArrayList<>();
+    public Page<ProductResponseDto> getProduct(User user, int page, int size, String sortBy, boolean isAsc) {
+        // 페이징 처리를 위한 Pageable 객체 생성
+        Sort.Direction direction = isAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sort = Sort.by(direction, sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        for (Product product : productList) {
-            responseDtos.add(new ProductResponseDto(product));
+        // 유저 권한 확인
+        UserRoleEnum userRoleEnum = user.getRole();
+        Page<Product> productList;
+        if(userRoleEnum == UserRoleEnum.USER){
+            productList = productRepository.findAllByUser(user, pageable);
+        }else{
+            productList = productRepository.findAll(pageable);
         }
 
-        return responseDtos;
+        return productList.map(ProductResponseDto::new);
     }
 
     @Transactional
     public void updateBySearch(Long id, ItemDto itemDto) {
         Product product = productRepository.findById(id).orElseThrow(() -> new NullPointerException("해당 상품을 존재하지 않습니다."));
         product.updateByItemDto(itemDto);
-    }
-
-    public List<ProductResponseDto> getAllProducts(){
-        List<Product> productList = productRepository.findAll();
-        List<ProductResponseDto> responseDtos = new ArrayList<>();
-        for (Product product : productList) {
-            responseDtos.add(new ProductResponseDto(product));
-        }
-        return responseDtos;
     }
 }
