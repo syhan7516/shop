@@ -1,5 +1,6 @@
 package com.shop.backend.controller;
 
+import com.shop.backend.dto.ProductMypriceRequestDto;
 import com.shop.backend.dto.ProductRequestDto;
 import com.shop.backend.dto.ProductResponseDto;
 import com.shop.backend.service.ProductService;
@@ -17,5 +18,10 @@ public class ProductController {
     public ProductResponseDto createProduct(@RequestBody ProductRequestDto requestDto){
 
         return productService.createProduct(requestDto);
+    }
+
+    @PutMapping("/products/{id}")
+    public ProductResponseDto updateProduct(@PathVariable Long id, @RequestBody ProductMypriceRequestDto requestDto){
+        return productService.updateProduct(id, requestDto);
     }
 }
