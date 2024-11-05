@@ -4,6 +4,7 @@ import com.shop.backend.dto.ProductMypriceRequestDto;
 import com.shop.backend.dto.ProductRequestDto;
 import com.shop.backend.dto.ProductResponseDto;
 import com.shop.backend.entity.Product;
+import com.shop.backend.entity.User;
 import com.shop.backend.naver.dto.ItemDto;
 import com.shop.backend.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +22,9 @@ public class ProductService {
 
     public static final int MIN_MY_PRICE = 100;
 
-    public ProductResponseDto createProduct(ProductRequestDto requestDto) {
+    public ProductResponseDto createProduct(ProductRequestDto requestDto,User user) {
 
-        Product product = productRepository.save(new Product(requestDto));
+        Product product = productRepository.save(new Product(requestDto,user));
 
         return new ProductResponseDto(product);
     }
@@ -43,12 +44,15 @@ public class ProductService {
         return new ProductResponseDto(product);
     }
 
-    public List<ProductResponseDto> getProduct() {
-        List<Product> productList = productRepository.findAll();
+    public List<ProductResponseDto> getProduct(User user) {
+
+        List<Product> productList = productRepository.findAllByUser(user);
         List<ProductResponseDto> responseDtos = new ArrayList<>();
+
         for (Product product : productList) {
             responseDtos.add(new ProductResponseDto(product));
         }
+
         return responseDtos;
     }
 
@@ -56,5 +60,14 @@ public class ProductService {
     public void updateBySearch(Long id, ItemDto itemDto) {
         Product product = productRepository.findById(id).orElseThrow(() -> new NullPointerException("해당 상품을 존재하지 않습니다."));
         product.updateByItemDto(itemDto);
+    }
+
+    public List<ProductResponseDto> getAllProducts(){
+        List<Product> productList = productRepository.findAll();
+        List<ProductResponseDto> responseDtos = new ArrayList<>();
+        for (Product product : productList) {
+            responseDtos.add(new ProductResponseDto(product));
+        }
+        return responseDtos;
     }
 }
